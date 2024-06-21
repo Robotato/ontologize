@@ -44,6 +44,9 @@ def get_parents(object_id : str, object_type : str, org_id : str = ECOLI, sessio
         object_id (str): Object for which to retrieve the parents.
         object_type (str) : Type of the object (Gene, Compound, etc.)
         org_id (str, optional): Organism id. Defaults to ECOLI.
+
+    Returns:
+        list[dict]: List of parents. Parent information is returned as raw dict form.
     """
 
     # Create session
