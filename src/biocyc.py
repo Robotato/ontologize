@@ -60,7 +60,7 @@ def get_parents(object_id : str, object_type : str, org_id : str = ECOLI, sessio
         raise Exception("Request failed")
     
     o = xmltodict.parse(r.content)
-    parents = o["ptools-xml"][object_type]["parent"]
+    parents = o["ptools-xml"][object_type].get("parent", [])
     if isinstance(parents, dict):
         parents = [parents]
 
