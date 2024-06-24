@@ -1,5 +1,5 @@
 from src.biocyc import get_session, get_parents
-from src.ontology import Ontology, OntologyNode, get_parents_dict
+from src.ontology import Ontology, get_parents_dict, build_ontology
 
 def test_parents(session):
     glc_parents = get_parents("GLC", "Compound", session=session)
@@ -8,11 +8,12 @@ def test_parents(session):
 
 
 def test_build_ontology(session):
-    print(get_parents_dict(["GLC", "ACET"], "Compound", session=session))
+    # get_parents_dict(["GLC", "ACET"], "Compound", session=session)
+    print(build_ontology(["GLC", "ACET"], "Compound", session=session))
 
 def main():
     session = get_session()
-    test_parents(session)
+    # test_parents(session)
     test_build_ontology(session)
 
 if __name__ == "__main__":
