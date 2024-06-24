@@ -1,3 +1,4 @@
+import requests
 import networkx as nx
 from collections import defaultdict
 from pprint import pformat
@@ -16,7 +17,7 @@ class bcolors:
         '\033[1;96m',  # bold cyan
         '\033[1;94m',  # bold blue
     ]
-    LEAF_COLOR = '\033[97m'
+    LEAF_COLOR = '\033[97m'  # white
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
@@ -29,7 +30,7 @@ class Ontology:
     def __str__(self) -> str:
         return self.to_string()
 
-    def to_string(self, max_depth=None, colors=False) -> str:
+    def to_string(self, max_depth=None, include_leaves=True, colors=False) -> str:
         """Returns a string representation of the ontology,
         traversing the tree in depth-first order.
 
@@ -68,13 +69,13 @@ class Ontology:
             if len(prefix) > 0:
                 prefix = prefix[:-1] + COLORSTART + prefix[-1] + COLOREND
 
-            # Add node to result
-            result = f"{prefix}{COLORSTART}{name} [{node}]{
-                COLOREND} {{{memberstring}}}\n"
-
-            # Stop early if max_depth is reached
-            if depth >= max_depth:
-                return visited, result
+            # Add node to result if max_depth is not reached, and
+            # either the node is not a leaf or leaves are included
+            # (still need to visit children to avoid re-visiting them later).
+            if depth <= max_depth and ((is_leaf and include_leaves) or not is_leaf):
+                result = f"{prefix}{COLORSTART}{name} [{node}]{COLOREND} {{{memberstring}}}\n"
+            else:
+                result = ""
 
             # Recursively traverse children
             children = list(self.graph.successors(node))
@@ -128,8 +129,14 @@ def get_ontology_data(objects, object_type, org_id=ECOLI, session=None):
 
                 # Collect results
                 for future in as_completed(futures):
-                    # Get parents and object id
-                    parents, common_name = future.result()
+                    try:
+                        # Get parents and object id
+                        parents, common_name = future.result()
+                    except requests.exceptions.RequestException:
+                        # If request fails, skip this object
+                        parents = []
+                        common_name = future_to_obj[future]
+
                     obj = future_to_obj[future]
 
                     # Remove object from orphans

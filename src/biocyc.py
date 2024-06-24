@@ -88,10 +88,10 @@ def get_parents_and_common_name(object_id : str, object_type : str, org_id : str
     
     # Check if request was successful
     if r.status_code != 200:
-        raise Exception("Request failed")
+        raise requests.HTTPError("Request failed")
     
     o = xmltodict.parse(r.content)
-    
+
     # Get common name if it exists, else use object id
     common_name = o["ptools-xml"][object_type].get("common-name", {}).get("#text", object_id)
 
