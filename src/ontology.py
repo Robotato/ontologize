@@ -165,23 +165,24 @@ def get_ontology_data(objects, schema_type, org_id=ECOLI, session=None):
 
 def build_ontology(objects: (list[str] | str),
                    schema_type: str,
-                   dataframe: Optional[pd.DataFrame] = None,
                    property: Optional[str | list[str | list[str]]] = None,
+                   dataframe: Optional[pd.DataFrame] = None,
                    org_id: str = ECOLI,
                    session: Optional[requests.Session] = None) -> Ontology:
     """Build an ontology from a list of objects, where each object is connected to its parents according to
     the MultiFun ontology.
 
     Args:
-        objects (list[str]): List of BioCyc object IDs for the objects to ontologize.
+        objects (list[str] | str): List of BioCyc object IDs for the objects to ontologize, or, if dataframe is provided, the column name containing the object IDs.
         schema_type (str): Type of the objects  to be ontologized in the BioCyc schema (e.g. "Reaction", "Gene", "Compound").
-            NOTE: If property is supplied, this is the type of the property.
-        dataframe (pd.DataFrame, optional): Not yet implemented. Defaults to None.
-        property (str | list[list[str]], optional): Sometimes, one wishes to ontologize objects based on a property of the objects, rather than the objects themselves.
-            For example, if the objects are reactions, and one wishes to ontologize them based on the pathways they are part of, the property could be
-            supplied as a list of the same length as `objects`, where each element is a list of (BioCyc IDs of) pathways that the corresponding reaction
-            is part of. This is a common use case, since the reaction ontology is not as informative as the pathway ontology. If `None` (the default),
-            the objects themselves are ontologized.
+            NOTE: If `property` is supplied, this is the type of the property.
+        property (str | list[list[str]], optional): Often, one wishes to ontologize objects based on some property, rather than the objects themselves.
+            For example, one may wish to ontologize reactions based on the pathways they are part of. In this case, the property could be supplied as a list of the
+            same length as `objects`, where each element is a list of (BioCyc IDs of) pathways that the corresponding reaction is part of. Alternatively, if
+            the `dataframe` argument is supplied, this can be the column name containing the property. If `None` (the default), the objects themselves are ontologized.
+        dataframe (pd.DataFrame, optional): Pandas DataFrame with columns for objects IDs (and optionally, properties) to ontologize. 
+            If provided, `objects` and `property` must be strings corresponding to the name of a column (or possible `None` in the case of `property`).
+            Defaults to `None`.
         org_id (str, optional): BioCyc organism ID. Defaults to ECOLI.
         session (requests.Session, optional): BioCyc session to use. Defaults to None.
 
@@ -191,7 +192,24 @@ def build_ontology(objects: (list[str] | str),
     # If property not supplied, set default to objects
     if property is None:
         property = [[obj] for obj in objects]
+
+    # If dataframe is provided, get objects and property from dataframe
+    # (need to be column names)
+    if dataframe is not None:
+        # Get objects list from dataframe
+        if not isinstance(objects, str):
+            raise ValueError("If dataframe is provided, objects must be a column name.")
+        objects = dataframe[objects].tolist()
+
+        # Get property list from dataframe (or default to objects)
+        if property is None:
+            property = [[obj] for obj in objects]
+        elif isinstance(property, str):
+            property = dataframe[property].tolist()
+        else:
+            raise ValueError("If dataframe is provided, property must be a column name.")
     
+    # Flatten property list
     flat_property = [item for sublist in property for item in sublist]
 
     # Get parents of each object
@@ -201,6 +219,7 @@ def build_ontology(objects: (list[str] | str),
     # Create ontology
     ontology = Ontology()
 
+    # Recursive function to add objects to ontology
     def add_iter(obj, nodes, label=None, to=None):
         if to is None:
             to = obj
