@@ -1,3 +1,5 @@
+from typing import Optional
+import pandas as pd
 import requests
 import networkx as nx
 from collections import defaultdict
@@ -73,7 +75,8 @@ class Ontology:
             # either the node is not a leaf or leaves are included
             # (still need to visit children to avoid re-visiting them later).
             if depth <= max_depth and ((is_leaf and include_leaves) or not is_leaf):
-                result = f"{prefix}{COLORSTART}{name} [{node}]{COLOREND} {{{memberstring}}}\n"
+                result = f"{prefix}{COLORSTART}{name} [{node}]{
+                    COLOREND} {{{memberstring}}}\n"
             else:
                 result = ""
 
@@ -100,7 +103,7 @@ class Ontology:
         return result
 
 
-def get_ontology_data(objects, object_type, org_id=ECOLI, session=None):
+def get_ontology_data(objects, schema_type, org_id=ECOLI, session=None):
     # Collect common name, parents of each object
     orphans = set(objects)
     common_names = {}
@@ -123,7 +126,7 @@ def get_ontology_data(objects, object_type, org_id=ECOLI, session=None):
                 future_to_obj = {}
                 for obj in orphans:
                     future = executor.submit(
-                        get_parents_and_common_name, obj, object_type, org_id, session)
+                        get_parents_and_common_name, obj, schema_type, org_id, session)
                     futures.add(future)
                     future_to_obj[future] = obj
 
@@ -147,7 +150,7 @@ def get_ontology_data(objects, object_type, org_id=ECOLI, session=None):
 
                     # Store parents of object
                     for parent in parents:
-                        parent_id = parent[object_type]["@frameid"]
+                        parent_id = parent[schema_type]["@frameid"]
 
                         # Add parent to object_to_parents
                         object_to_parents[obj].append(parent_id)
@@ -160,31 +163,66 @@ def get_ontology_data(objects, object_type, org_id=ECOLI, session=None):
     return common_names, object_to_parents
 
 
-def build_ontology(objects, object_type, org_id=ECOLI, session=None):
+def build_ontology(objects: (list[str] | str),
+                   schema_type: str,
+                   dataframe: Optional[pd.DataFrame] = None,
+                   property: Optional[str | list[str | list[str]]] = None,
+                   org_id: str = ECOLI,
+                   session: Optional[requests.Session] = None) -> Ontology:
+    """Build an ontology from a list of objects, where each object is connected to its parents according to
+    the MultiFun ontology.
+
+    Args:
+        objects (list[str]): List of BioCyc object IDs for the objects to ontologize.
+        schema_type (str): Type of the objects  to be ontologized in the BioCyc schema (e.g. "Reaction", "Gene", "Compound").
+            NOTE: If property is supplied, this is the type of the property.
+        dataframe (pd.DataFrame, optional): Not yet implemented. Defaults to None.
+        property (str | list[list[str]], optional): Sometimes, one wishes to ontologize objects based on a property of the objects, rather than the objects themselves.
+            For example, if the objects are reactions, and one wishes to ontologize them based on the pathways they are part of, the property could be
+            supplied as a list of the same length as `objects`, where each element is a list of (BioCyc IDs of) pathways that the corresponding reaction
+            is part of. This is a common use case, since the reaction ontology is not as informative as the pathway ontology. If `None` (the default),
+            the objects themselves are ontologized.
+        org_id (str, optional): BioCyc organism ID. Defaults to ECOLI.
+        session (requests.Session, optional): BioCyc session to use. Defaults to None.
+
+    Returns:
+        Ontology: ontology object (access graph with ontology.graph).
+    """
+    # If property not supplied, set default to objects
+    if property is None:
+        property = [[obj] for obj in objects]
+    
+    flat_property = [item for sublist in property for item in sublist]
+
     # Get parents of each object
     common_names, parents_dict = get_ontology_data(
-        objects, object_type, org_id=org_id, session=session)
+        set(flat_property), schema_type, org_id=org_id, session=session)
 
     # Create ontology
     ontology = Ontology()
 
-    def add_iter(obj, nodes, to=None):
+    def add_iter(obj, nodes, label=None, to=None):
         if to is None:
             to = obj
+        if label is None:
+            label = obj
 
         for node in nodes:
             # Add node if it doesn't exist, and add object to members
             if node not in ontology.graph.nodes:
                 ontology.graph.add_node(
-                    node, members={obj}, common_name=common_names[node])
+                    node, members={label}, common_name=common_names[node])
             else:
-                ontology.graph.nodes[node]["members"].add(obj)
+                ontology.graph.nodes[node]["members"].add(label)
 
-            # Create edge to connect node to object
-            ontology.graph.add_edge(node, to)
-            add_iter(obj, parents_dict[node], to=node)
-
-    for obj in objects:
-        add_iter(obj, parents_dict[obj])
+                # Create edge to connect node to object
+                ontology.graph.add_edge(node, to)
+                add_iter(obj, parents_dict[node], label=label, to=node)
+    
+    for obj, prop in zip(objects, property):
+        if not isinstance(prop, list):
+            prop = [prop]
+        for p in prop:
+            add_iter(p, parents_dict[p], label=obj)
 
     return ontology
