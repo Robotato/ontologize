@@ -25,18 +25,32 @@ The required arguments are given as follows:
 
 ### Example:
 
+```python
+# TODO
+```
 
 ### Flags
 
-- `-o <orgid>, --orgid <orgid>`: BioCyc organism ID, used to specify the organism-specific database within to search. [ECOLI](https://ecocyc.org/) by default.
-- `-s <sheet_name>, --sheet <sheet_name>`: 
-- [object column]
-- [property column]
-- max_depth
-- show_leaves
-- colors (True by default)
+Ontology-building options:
+- `-s <sheet_name>, --sheet <sheet_name>`: For a `.xlsx` file, the name of the sheet containing BioCyc IDs. Ignored if `file` is not a `.xlsx` file.
+- `-o <objects>, --objects <objects>`: For a multi-column `file`, the name of the column containing BioCyc IDs for the objects to ontologize. Requires a header row containing column names.
+- `-p <objects>, --property <objects>`: For a multi-column `file`, the name of the column containing BioCyc IDs for the property to ontologize. Requires a header row containing column names. When using this option, the objects must also be specified using the `-o` option.
+- `--database <orgid>`: BioCyc organism ID, used to specify the organism-specific database within to search. [ECOLI](https://ecocyc.org/) by default.
 
-- graph options (not implemented)
-- pkl options
+Printing options:
+- `--depth <depth>`: Maximum depth of the ontology to print. No limit by default.
+- `--leaves`: Whether to show leaf nodes, i.e., the ontologized objects themselves. Not shown by default.
+- `--coloroff`: Turns off colorful printing.
 
---interactive (allows maintaining session)
+> TODO: graph options (not implemented), pkl options, --interactive (allows maintaining session)
+
+## Python interface
+
+```python
+#TODO
+```
+
+# References
+
+[BioCyc19] Karp, P.D., et al., The BioCyc collection of microbial genomes and metabolic pathways
+Briefings in Bioinformatics (2019).
