@@ -234,9 +234,9 @@ def build_ontology(objects: (list[str] | str),
             else:
                 ontology.graph.nodes[node]["members"].add(label)
 
-                # Create edge to connect node to object
-                ontology.graph.add_edge(node, to)
-                add_iter(obj, parents_dict[node], label=label, to=node)
+            # Create edge to connect node to object
+            ontology.graph.add_edge(node, to)    
+            add_iter(obj, parents_dict[node], label=label, to=node)
     
     for obj, prop in zip(objects, property):
         if not isinstance(prop, list):
