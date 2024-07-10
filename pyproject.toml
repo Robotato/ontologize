@@ -1,3 +1,35 @@
+# pyproject.toml
+
 [build-system]
-requires = ["setuptools>=61.0"]
+requires      = ["setuptools>=61.0.0"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "ontologize"
+version = "0.1.0"
+description = "Build annotated ontologies for BioCyc objects"
+readme = "README.md"
+authors = [{ name = "Mica Yang" }]
+license = { file = "LICENSE" }
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+keywords = ["biocyc", "ecocyc", "metacyc", "ontology", "genes"]
+dependencies = [
+    "networkx>=3.0",
+    "numpy>=2.0.0",
+    "openpyxl",
+    "pandas",
+    "requests",
+    "tqdm",
+    "xmltodict>=0.13.0"
+]
+requires-python = ">=3.10"
+
+[project.urls]
+Homepage = "https://github.com/Robotato/ontologize"
+
+[project.scripts]
+ontologize = "ontologize.__main__:main"
