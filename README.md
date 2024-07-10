@@ -6,6 +6,36 @@ python -m pip install ontologize
 
 # Usage
 
+## Vignette: Genes
+
+Building an `Ontology` object from a list of BioCyc IDs:
+
+```python
+from ontologize.ontology import build_ontology
+
+# cadA EG10131
+# lacA EG10524 
+# xylA EG11074 
+ont = build_ontology(objects=["EG10131", "EG10524", "EG11074"], schema_type="Gene")
+```
+
+`Ontology` objects store an annotated ontology graph, as a networkX DiGraph:
+
+```python
+import networkx as nx
+assert isinstance(ont.graph, nx.DiGraph)
+```
+
+Rich printing options are supported, including truncation of the graph at a given depth, inclusion/exclusion of leaf nodes, whether to color by depth.
+
+```python
+print(ont.to_string(max_depth=None, include_leaves=False, colors=True))
+```
+
+![alt text](vignette_1.png)
+
+In this example, we see that lacA and xylA are both involved in carbon utilization, while cadA is related to pH adaptation.
+
 ## Command-Line Interface
 
 Once exposed, `ontologize` exposes a runnable script, and can also be called as a module:
@@ -34,7 +64,8 @@ The required arguments are given as follows:
 Ontology-building options:
 - `-s <sheet_name>, --sheet <sheet_name>`: For a `.xlsx` file, the name of the sheet containing BioCyc IDs. Ignored if `file` is not a `.xlsx` file.
 - `-o <objects>, --objects <objects>`: For a multi-column `file`, the name of the column containing BioCyc IDs for the objects to ontologize. Requires a header row containing column names.
-- `-p <objects>, --property <objects>`: For a multi-column `file`, the name of the column containing BioCyc IDs for the property to ontologize. Requires a header row containing column names. When using this option, the objects must also be specified using the `-o` option.
+- `-p <objects>, --property <objects>`: For a multi-column `file`, the name of the column containing BioCyc IDs for the property to ontologize. Requires a header row containing column names. When using this option, the objects must also be specified using the `-o` option. 
+- > **WARNING: `-p, --property` NOT YET IMPLEMENTED**
 - `--database <orgid>`: BioCyc organism ID, used to specify the organism-specific database within to search. [ECOLI](https://ecocyc.org/) by default.
 
 Printing options:

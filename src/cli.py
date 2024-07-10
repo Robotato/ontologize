@@ -10,6 +10,15 @@ HELP = {
             " assumed to be in the first sheet in the first column, treating the first entry as a header.",
     "schema_type": "Type of the objects (or properties) to be ontologized in the Biocyc Schema"
                    " (e.g., Gene, Pathway, Compound, etc.)",
+    "sheet": "Name of the sheet in the .xlsx file containing the BioCyc IDs. Ignored if file is not a .xlsx file.",
+    "objects": "Name of the column containing BioCyc IDs for the objects to ontologize. Requires a header row containing column names.",
+    "property": "For a multi-column file, the name of the column containing BioCyc IDs for"
+                " the property to ontologize. Requires a header row containing column names."
+                " When using this option, the objects must also be specified using the -o option.",
+    "database": "BioCyc organism ID, used to specify the organism-specific database within to search. ECOLI by default.",
+    "depth": "Maximum depth of the ontology to print. No limit by default.",
+    "leaves": "Whether to show leaf nodes, i.e., the ontologized objects themselves. Not shown by default.",
+    "coloroff": "Turns off colorful printing."
 }
 
 
@@ -21,21 +30,16 @@ def cli():
     parser.add_argument('schema_type', type=str, help=HELP['schema_type'])
 
     # Ontology-building/file options
-    parser.add_argument('-s', '--sheet', type=str,
-                        help='For a .xlsx file, the name of the sheet containing BioCyc IDs. Ignored if file is not a .xlsx file.')
-    parser.add_argument('-o', '--objects', type=str,
-                        help='For a multi-column file, the name of the column containing BioCyc IDs for the objects to ontologize. Requires a header row containing column names.')
-    parser.add_argument('-p', '--property', type=str, help='For a multi-column file, the name of the column containing BioCyc IDs for the property to ontologize. Requires a header row containing column names. When using this option, the objects must also be specified using the -o option.')
-    parser.add_argument('--database', type=str, default='ECOLI',
-                        help='BioCyc organism ID, used to specify the organism-specific database within to search. ECOLI by default.')
+    parser.add_argument('-s', '--sheet', type=str, help=HELP['sheet'])
+    parser.add_argument('-o', '--objects', type=str, help=HELP['objects'])
+    parser.add_argument('-p', '--property', type=str, help=HELP['property'])
+    parser.add_argument('--database', type=str,
+                        default='ECOLI', help=HELP['database'])
 
     # Ontology-printing options
-    parser.add_argument(
-        '--depth', type=int, help='Maximum depth of the ontology to print. No limit by default.')
-    parser.add_argument('--leaves', action='store_true',
-                        help='Whether to show leaf nodes, i.e., the ontologized objects themselves. Not shown by default.')
-    parser.add_argument('--coloroff', action='store_true',
-                        help='Turns off colorful printing.')
+    parser.add_argument('--depth', type=int, help=HELP['depth'])
+    parser.add_argument('--leaves', action='store_true', help=HELP["leaves"])
+    parser.add_argument('--coloroff', action='store_true', help=HELP['coloroff'])
 
     args = parser.parse_args()
 
