@@ -8,7 +8,9 @@ python -m pip install ontologize
 
 ## Vignette: Genes
 
-Building an `Ontology` object from a list of BioCyc IDs:
+Suppose we have a list of genes, perhaps ones that are upregulated in a certain environment, and we wish to understand the functional changes in the cell.
+
+We can first build an `Ontology` object from a list of the genes' BioCyc IDs:
 
 ```python
 from ontologize.ontology import build_ontology
@@ -32,7 +34,8 @@ Rich printing options are supported, including truncation of the graph at a give
 print(ont.to_string(max_depth=None, include_leaves=False, colors=True))
 ```
 
-![alt text](vignette_1.png)
+<!-- ![alt text](vignette_1.png) -->
+![alt text](https://github.com/Robotato/ontologize/blob/main/vignette_1.png?raw=true)
 
 In this example, we see that lacA and xylA are both involved in carbon utilization, while cadA is related to pH adaptation.
 
@@ -75,11 +78,6 @@ Printing options:
 
 > TODO: graph options (not implemented), pkl options, --interactive (allows maintaining session)
 
-## Python interface
-
-```python
-#TODO
-```
 
 # References
 

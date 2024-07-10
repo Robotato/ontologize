@@ -7,8 +7,8 @@ from pprint import pformat
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from src.biocyc import get_parents_and_common_name, get_session, get_parents
-from src.defaults import ECOLI
+from ontologize.biocyc import get_parents_and_common_name, get_session, get_parents
+from ontologize.defaults import ECOLI
 
 
 class bcolors:

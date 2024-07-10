@@ -1,7 +1,7 @@
 import os
 import argparse
 import pandas as pd
-from src.ontology import build_ontology
+from ontologize.ontology import build_ontology
 
 HELP = {
     "file": "Path to a .csv, .tsv, or .xlsx file with BioCyc object IDs to ontologize."

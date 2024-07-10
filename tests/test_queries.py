@@ -1,5 +1,5 @@
-from src.biocyc import get_session, get_parents
-from src.ontology import Ontology, get_ontology_data, build_ontology
+from ontologize.biocyc import get_session, get_parents
+from ontologize.ontology import Ontology, get_ontology_data, build_ontology
 
 def test_parents(session):
     glc_parents = get_parents("GLC", "Compound", session=session)

@@ -1,4 +1,4 @@
-from src.cli import cli
+from ontologize.cli import cli
 
 def main():
     cli()

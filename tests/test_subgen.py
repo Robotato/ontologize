@@ -1,8 +1,8 @@
 import pandas as pd
 from pprint import pp
 
-from src.biocyc import get_session
-from src.ontology import get_ontology_data, build_ontology
+from ontologize.biocyc import get_session
+from ontologize.ontology import get_ontology_data, build_ontology
 
 def test_subgen():
     # data = pd.read_csv("tests/subgen.csv")

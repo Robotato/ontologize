@@ -2,7 +2,7 @@ import requests
 import xmltodict
 import getpass
 
-from src.defaults import ECOLI
+from ontologize.defaults import ECOLI
 
 
 def get_session(user=None, password=None, retries=3):
