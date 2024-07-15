@@ -75,8 +75,8 @@ class Ontology:
             # either the node is not a leaf or leaves are included
             # (still need to visit children to avoid re-visiting them later).
             if depth <= max_depth and ((is_leaf and include_leaves) or not is_leaf):
-                result = f"{prefix}{COLORSTART}{name} [{node}]{
-                    COLOREND} {{{memberstring}}}\n"
+                result = (f"{prefix}{COLORSTART}{name}"
+                          f" [{node}]{COLOREND} {{{memberstring}}}\n")
             else:
                 result = ""
 
@@ -198,7 +198,8 @@ def build_ontology(objects: (list[str] | str),
     if dataframe is not None:
         # Get objects list from dataframe
         if not isinstance(objects, str):
-            raise ValueError("If dataframe is provided, objects must be a column name.")
+            raise ValueError(
+                "If dataframe is provided, objects must be a column name.")
         objects = dataframe[objects].tolist()
 
         # Get property list from dataframe (or default to objects)
@@ -207,8 +208,9 @@ def build_ontology(objects: (list[str] | str),
         elif isinstance(property, str):
             property = dataframe[property].tolist()
         else:
-            raise ValueError("If dataframe is provided, property must be a column name.")
-    
+            raise ValueError(
+                "If dataframe is provided, property must be a column name.")
+
     # Flatten property list
     flat_property = [item for sublist in property for item in sublist]
 
@@ -235,9 +237,9 @@ def build_ontology(objects: (list[str] | str),
                 ontology.graph.nodes[node]["members"].add(label)
 
             # Create edge to connect node to object
-            ontology.graph.add_edge(node, to)    
+            ontology.graph.add_edge(node, to)
             add_iter(obj, parents_dict[node], label=label, to=node)
-    
+
     for obj, prop in zip(objects, property):
         if not isinstance(prop, list):
             prop = [prop]

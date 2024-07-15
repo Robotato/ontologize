@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ontologize"
-version = "0.1.2"
+version = "0.1.4"
 description = "Build annotated ontologies for BioCyc objects"
 readme = "README.md"
 authors = [{ name = "Mica Yang" }]
@@ -19,7 +19,7 @@ classifiers = [
 keywords = ["biocyc", "ecocyc", "metacyc", "ontology", "genes"]
 dependencies = [
     "networkx>=3.0",
-    "numpy>=2.0.0",
+    "numpy>=1.18.5,<2.0",
     "openpyxl",
     "pandas",
     "requests",

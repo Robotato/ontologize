@@ -14,7 +14,7 @@ idna==3.7
     # via requests
 networkx==3.3
     # via ontologize (pyproject.toml)
-numpy==2.0.0
+numpy==1.26.4
     # via
     #   ontologize (pyproject.toml)
     #   pandas
