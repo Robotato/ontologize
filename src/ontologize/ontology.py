@@ -7,7 +7,7 @@ from pprint import pformat
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from ontologize.biocyc import get_parents_and_common_name, get_session, get_parents
+from ontologize.biocyc import SchemaError, get_parents_and_common_name, get_session, get_parents
 from ontologize.defaults import ECOLI
 
 
@@ -139,6 +139,14 @@ def get_ontology_data(objects, schema_type, org_id=ECOLI, session=None):
                         # If request fails, skip this object
                         parents = []
                         common_name = future_to_obj[future]
+                    except SchemaError:
+                        # If object does not match schema, skip this object
+                        # TODO: store result as child of a Schema Error node
+                        parents = []
+                        common_name = future_to_obj[future]
+                    except Exception as e:
+                        # If any other error occurs, raise it indicating which object caused it
+                        raise Exception(f"Error for object {future_to_obj[future]}") from e
 
                     obj = future_to_obj[future]
 

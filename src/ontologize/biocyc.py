@@ -5,6 +5,10 @@ import getpass
 from ontologize.defaults import ECOLI
 
 
+class SchemaError(Exception):
+    pass
+
+
 def get_session(user=None, password=None, retries=3):
     # Create session
     s = requests.Session()
@@ -90,16 +94,19 @@ def get_parents_and_common_name(object_id: str, object_type: str, org_id: str = 
 
     # Check if request was successful
     if r.status_code != 200:
-        raise requests.HTTPError("Request failed")
+        raise requests.HTTPError(f"Request failed (status {r.status_code}).")
 
-    o = xmltodict.parse(r.content)
+    o = xmltodict.parse(r.content)["ptools-xml"]
+
+    if object_type not in o:
+        raise SchemaError(f"{object_id} does not match schema_type {object_type}.")
 
     # Get common name if it exists, else use object id
-    common_name = o["ptools-xml"][object_type].get(
+    common_name = o[object_type].get(
         "common-name", {}).get("#text", object_id)
 
     # Get parents
-    parents = o["ptools-xml"][object_type].get("parent", [])
+    parents = o[object_type].get("parent", [])
     if isinstance(parents, dict):
         parents = [parents]
 
