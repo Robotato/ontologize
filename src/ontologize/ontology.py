@@ -13,7 +13,7 @@ from ontologize.biocyc import SchemaError, get_parents_and_common_name, get_sess
 from ontologize.defaults import ECOLI
 
 
-class bcolors:
+class ShellColors:
     DEPTH_COLORS = [
         '\033[1;91m',  # bold red
         '\033[1;95m',  # bold magenta
@@ -25,6 +25,17 @@ class bcolors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
+
+
+class HTMLColors:
+    DEPTH_COLORS = [
+        "#F4C2C2", # 'Tea rose',
+        "#E6E6FA", # 'Lavender',
+        "#F0FFF0", # 'Honeydew',
+        "#E0FFFF", # 'Light cyan',
+        "#ADD8E6", # 'Light blue',
+    ]
+    LEAF_COLOR = '#000000'  # black
 
 
 class Ontology:
@@ -67,9 +78,9 @@ class Ontology:
             # Build color formatting
             COLORSTART, COLOREND = "", ""
             if colors:
-                COLORSTART = bcolors.DEPTH_COLORS[depth % len(
-                    bcolors.DEPTH_COLORS)] if not is_leaf else bcolors.LEAF_COLOR
-                COLOREND = bcolors.ENDC
+                COLORSTART = ShellColors.DEPTH_COLORS[depth % len(
+                    ShellColors.DEPTH_COLORS)] if not is_leaf else ShellColors.LEAF_COLOR
+                COLOREND = ShellColors.ENDC
             if len(prefix) > 0:
                 prefix = prefix[:-1] + COLORSTART + prefix[-1] + COLOREND
 
@@ -110,7 +121,7 @@ class Ontology:
 
         Returns:
             str: _description_
-        """        
+        """
         # Create HTML document
         impl = getDOMImplementation()
         dt = impl.createDocumentType(
@@ -121,24 +132,31 @@ class Ontology:
         dom = impl.createDocument("http://www.w3.org/1999/xhtml", "html", dt)
         html = dom.documentElement
 
-        # Add style
+        # Add head
         head = dom.createElement("head")
         html.appendChild(head)
+
+        # Add style
         style = dom.createElement("style")
-        style.appendChild(dom.createTextNode("""
+        style_str = """
         details {
-            padding: 10px; 
+            padding: 10px;
             border: 5px solid #f7f7f7;
             border-radius: 3px;
-            background-color: #e4eaef;
         }
-        """))
+        """
+        style_str += "\n".join([f'''
+            .depth_{depth} {{
+                background-color: {color};
+            }}'''
+            for depth, color in enumerate(HTMLColors.DEPTH_COLORS)])
+        style.appendChild(dom.createTextNode(style_str))
         head.appendChild(style)
-
 
         # Traverse the nodes in depth-first order,
         # starting from the roots
-        def html_iter(node, parent):
+
+        def html_iter(node, parent, depth=0):
             # Keep track of nodes visited, so outer function does not
             # revisit them as root of some tree
             visited = {node}
@@ -146,11 +164,19 @@ class Ontology:
             # Get common name
             name = self.graph.nodes[node].get("common_name", node)
 
+            # Build formatting for node
+            node_members = self.graph.nodes[node].get("members", [])
+            memberstring = (", ".join(node_members)
+                            if len(node_members) <= 5
+                            else f"{len(node_members)} members")
+
             # Create HTML element for node
             node_elem = dom.createElement("details")
             node_elem.setAttribute("open", "open")
             summary = dom.createElement("summary")
-            summary.appendChild(dom.createTextNode(name))
+            summary.appendChild(dom.createTextNode(
+                f"{name} {{{memberstring}}}"))
+            summary.setAttribute("class", f"depth_{depth % len(HTMLColors.DEPTH_COLORS)}")
             node_elem.appendChild(summary)
 
             parent.appendChild(node_elem)
@@ -158,10 +184,10 @@ class Ontology:
             # Recursively traverse children
             children = list(self.graph.successors(node))
             for child in children:
-                visited.update(html_iter(child, node_elem))
-            
+                visited.update(html_iter(child, node_elem, depth=depth+1))
+
             return visited
-        
+
         # Create HTML element for ontology
         ontology_elem = dom.createElement("div")
         ontology_elem.setAttribute("id", "ontology")
@@ -219,7 +245,8 @@ def get_ontology_data(objects, schema_type, org_id=ECOLI, session=None):
                         common_name = future_to_obj[future]
                     except Exception as e:
                         # If any other error occurs, raise it indicating which object caused it
-                        raise Exception(f"Error for object {future_to_obj[future]}") from e
+                        raise Exception(f"Error for object {
+                                        future_to_obj[future]}") from e
 
                     obj = future_to_obj[future]
 
@@ -261,7 +288,7 @@ def build_ontology(objects: (list[str] | str),
             For example, one may wish to ontologize reactions based on the pathways they are part of. In this case, the property could be supplied as a list of the
             same length as `objects`, where each element is a list of (BioCyc IDs of) pathways that the corresponding reaction is part of. Alternatively, if
             the `dataframe` argument is supplied, this can be the column name containing the property. If `None` (the default), the objects themselves are ontologized.
-        dataframe (pd.DataFrame, optional): Pandas DataFrame with columns for objects IDs (and optionally, properties) to ontologize. 
+        dataframe (pd.DataFrame, optional): Pandas DataFrame with columns for objects IDs (and optionally, properties) to ontologize.
             If provided, `objects` and `property` must be strings corresponding to the name of a column (or possible `None` in the case of `property`).
             Defaults to `None`.
         org_id (str, optional): BioCyc organism ID. Defaults to ECOLI.
