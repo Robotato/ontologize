@@ -16,8 +16,18 @@ def test_subgen():
     print(build_ontology(objects, "Gene", session=session).to_string(max_depth=3, include_leaves=False, colors=True))
 
 
+def test_html():
+    session = get_session()
+    ontology = build_ontology(["GLC", "ACET"], "Compound", session=session)
+    # html = ontology.to_html(max_depth=3, include_leaves=False, colors=True)
+    html = ontology.to_html()
+    with open("tests/subgen.html", "w") as f:
+        f.write(html)
+
+
 def main():
-    test_subgen()
+    # test_subgen()
+    test_html()
 
 if __name__ == "__main__":
     main()

@@ -1,4 +1,6 @@
 from typing import Optional
+from xml.dom.minidom import getDOMImplementation, Document
+
 import pandas as pd
 import requests
 import networkx as nx
@@ -34,7 +36,7 @@ class Ontology:
 
     def to_string(self, max_depth=None, include_leaves=True, colors=False) -> str:
         """Returns a string representation of the ontology,
-        traversing the tree in depth-first order.
+        traversing the DAG in depth-first order.
 
         Returns:
             str: _description_
@@ -101,6 +103,77 @@ class Ontology:
             result += substring
 
         return result
+
+    def to_html(self) -> str:
+        """Returns an HTML representation of the ontology,
+        traversing the DAG in depth-first order.
+
+        Returns:
+            str: _description_
+        """        
+        # Create HTML document
+        impl = getDOMImplementation()
+        dt = impl.createDocumentType(
+            "html",
+            "-//W3C//DTD XHTML 1.0 Strict//EN",
+            "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd",
+        )
+        dom = impl.createDocument("http://www.w3.org/1999/xhtml", "html", dt)
+        html = dom.documentElement
+
+        # Add style
+        head = dom.createElement("head")
+        html.appendChild(head)
+        style = dom.createElement("style")
+        style.appendChild(dom.createTextNode("""
+        details {
+            padding: 10px; 
+            border: 5px solid #f7f7f7;
+            border-radius: 3px;
+            background-color: #e4eaef;
+        }
+        """))
+        head.appendChild(style)
+
+
+        # Traverse the nodes in depth-first order,
+        # starting from the roots
+        def html_iter(node, parent):
+            # Keep track of nodes visited, so outer function does not
+            # revisit them as root of some tree
+            visited = {node}
+
+            # Get common name
+            name = self.graph.nodes[node].get("common_name", node)
+
+            # Create HTML element for node
+            node_elem = dom.createElement("details")
+            node_elem.setAttribute("open", "open")
+            summary = dom.createElement("summary")
+            summary.appendChild(dom.createTextNode(name))
+            node_elem.appendChild(summary)
+
+            parent.appendChild(node_elem)
+
+            # Recursively traverse children
+            children = list(self.graph.successors(node))
+            for child in children:
+                visited.update(html_iter(child, node_elem))
+            
+            return visited
+        
+        # Create HTML element for ontology
+        ontology_elem = dom.createElement("div")
+        ontology_elem.setAttribute("id", "ontology")
+        html.appendChild(ontology_elem)
+
+        # Traverse DAG starting from roots
+        remaining = list(nx.topological_sort(self.graph))
+        while len(remaining) > 0:
+            visited = html_iter(remaining[0], ontology_elem)
+            remaining = [node for node in remaining if node not in visited]
+
+        return dom.toxml()
 
 
 def get_ontology_data(objects, schema_type, org_id=ECOLI, session=None):
