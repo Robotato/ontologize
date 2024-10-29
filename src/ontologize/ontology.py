@@ -29,11 +29,11 @@ class ShellColors:
 
 class HTMLColors:
     DEPTH_COLORS = [
-        "#F4C2C2", # 'Tea rose',
-        "#E6E6FA", # 'Lavender',
-        "#F0FFF0", # 'Honeydew',
-        "#E0FFFF", # 'Light cyan',
-        "#ADD8E6", # 'Light blue',
+        "#F4C2C2",  # 'Tea rose',
+        "#E6E6FA",  # 'Lavender',
+        "#F0FFF0",  # 'Honeydew',
+        "#E0FFFF",  # 'Light cyan',
+        "#ADD8E6",  # 'Light blue',
     ]
     LEAF_COLOR = '#000000'  # black
 
@@ -176,7 +176,8 @@ class Ontology:
             summary = dom.createElement("summary")
             summary.appendChild(dom.createTextNode(
                 f"{name} {{{memberstring}}}"))
-            summary.setAttribute("class", f"depth_{depth % len(HTMLColors.DEPTH_COLORS)}")
+            summary.setAttribute(
+                "class", f"depth_{depth % len(HTMLColors.DEPTH_COLORS)}")
             node_elem.appendChild(summary)
 
             parent.appendChild(node_elem)
@@ -245,8 +246,7 @@ def get_ontology_data(objects, schema_type, org_id=ECOLI, session=None):
                         common_name = future_to_obj[future]
                     except Exception as e:
                         # If any other error occurs, raise it indicating which object caused it
-                        raise Exception(f"Error for object {
-                                        future_to_obj[future]}") from e
+                        raise Exception(f"Error for object {future_to_obj[future]}") from e  # nopep8
 
                     obj = future_to_obj[future]
 
