@@ -330,13 +330,13 @@ def build_ontology(objects: (list[str] | str),
     ontology = Ontology()
 
     # Recursive function to add objects to ontology
-    def add_iter(obj, nodes, label=None, to=None):
-        if to is None:
-            to = obj
+    def add_iter(obj, parents, label=None, child=None):
+        if child is None:
+            child = obj
         if label is None:
             label = obj
 
-        for node in nodes:
+        for node in parents:
             # Add node if it doesn't exist, and add object to members
             if node not in ontology.graph.nodes:
                 ontology.graph.add_node(
@@ -344,9 +344,14 @@ def build_ontology(objects: (list[str] | str),
             else:
                 ontology.graph.nodes[node]["members"].add(label)
 
-            # Create edge to connect node to object
-            ontology.graph.add_edge(node, to)
-            add_iter(obj, parents_dict[node], label=label, to=node)
+            # Connect child to parent
+            if child not in ontology.graph.nodes:
+                ontology.graph.add_node(
+                    child, members={label}, common_name=common_names[child])
+            ontology.graph.add_edge(node, child)
+
+            # Recurse to parents of node
+            add_iter(obj, parents_dict[node], label=label, child=node)
 
     for obj, prop in zip(objects, property):
         if not isinstance(prop, list):
