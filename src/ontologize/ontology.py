@@ -1,3 +1,5 @@
+import warnings
+
 from typing import Optional
 from xml.dom.minidom import getDOMImplementation, Document
 
@@ -203,7 +205,7 @@ class Ontology:
         return dom.toxml()
 
 
-def get_ontology_data(objects, schema_type, org_id=ECOLI, session=None):
+def get_ontology_data(objects, schema_type, org_id=ECOLI, session=None, show_progress=True):
     # Collect common name, parents of each object
     orphans = set(objects)
     common_names = {}
@@ -214,59 +216,72 @@ def get_ontology_data(objects, schema_type, org_id=ECOLI, session=None):
     session = get_session() if session is None else session
 
     while len(orphans) > 0:
+
         # Show progress bar
-        with tqdm(total=len(orphans)) as pbar:
+        if show_progress:
+            pbar = tqdm(total=len(orphans))
+        
+        # Get parents in parallel so as not to waste time
+        with ThreadPoolExecutor() as executor:
 
-            # Get parents in parallel so as not to waste time
-            with ThreadPoolExecutor() as executor:
+            # Create futures for each orphaned object,
+            # keeping track of which object id they correspond to
+            futures = set()
+            future_to_obj = {}
+            for obj in orphans:
+                future = executor.submit(
+                    get_parents_and_common_name, obj, schema_type, org_id, session)
+                futures.add(future)
+                future_to_obj[future] = obj
 
-                # Create futures for each orphaned object,
-                # keeping track of which object id they correspond to
-                futures = set()
-                future_to_obj = {}
-                for obj in orphans:
-                    future = executor.submit(
-                        get_parents_and_common_name, obj, schema_type, org_id, session)
-                    futures.add(future)
-                    future_to_obj[future] = obj
+            # Collect results
+            for future in as_completed(futures):
+                try:
+                    # Get parents and object id
+                    parents, common_name = future.result()
+                except requests.exceptions.RequestException:
+                    # If request fails, skip this object
+                    warnings.warn(
+                        f"Request failed for object {future_to_obj[future]}. Skipping.")
+                    parents = []
+                    common_name = future_to_obj[future]
+                except SchemaError:
+                    # If object does not match schema, skip this object
+                    # TODO: store result as child of a Schema Error node
+                    warnings.warn(
+                        f"Object {future_to_obj[future]} does not match schema {schema_type}. Skipping.")
+                    parents = []
+                    common_name = future_to_obj[future]
+                except Exception as e:
+                    # If any other error occurs, raise it indicating which object caused it
+                    raise Exception(f"Error for object {future_to_obj[future]}") from e  # nopep8
 
-                # Collect results
-                for future in as_completed(futures):
-                    try:
-                        # Get parents and object id
-                        parents, common_name = future.result()
-                    except requests.exceptions.RequestException:
-                        # If request fails, skip this object
-                        parents = []
-                        common_name = future_to_obj[future]
-                    except SchemaError:
-                        # If object does not match schema, skip this object
-                        # TODO: store result as child of a Schema Error node
-                        parents = []
-                        common_name = future_to_obj[future]
-                    except Exception as e:
-                        # If any other error occurs, raise it indicating which object caused it
-                        raise Exception(f"Error for object {future_to_obj[future]}") from e  # nopep8
+                obj = future_to_obj[future]
 
-                    obj = future_to_obj[future]
+                # Remove object from orphans
+                orphans.remove(obj)
 
-                    # Remove object from orphans
-                    orphans.remove(obj)
+                # Store common name of object
+                common_names[obj] = common_name
 
-                    # Store common name of object
-                    common_names[obj] = common_name
+                # Store parents of object
+                for parent in parents:
+                    parent_id = parent[schema_type]["@frameid"]
 
-                    # Store parents of object
-                    for parent in parents:
-                        parent_id = parent[schema_type]["@frameid"]
+                    # Add parent to object_to_parents
+                    object_to_parents[obj].append(parent_id)
 
-                        # Add parent to object_to_parents
-                        object_to_parents[obj].append(parent_id)
+                    # Add parent to orphans if it is not already in object_to_parents
+                    if parent_id not in object_to_parents:
+                        orphans.add(parent_id)
 
-                        # Add parent to orphans if it is not already in object_to_parents
-                        if parent_id not in object_to_parents:
-                            orphans.add(parent_id)
+                # Update progress bar
+                if show_progress:
                     pbar.update(1)
+            
+            # Close progress bar
+            if show_progress:
+                pbar.close()
 
     return common_names, object_to_parents
 
@@ -276,7 +291,8 @@ def build_ontology(objects: (list[str] | str),
                    property: Optional[str | list[str | list[str]]] = None,
                    dataframe: Optional[pd.DataFrame] = None,
                    org_id: str = ECOLI,
-                   session: Optional[requests.Session] = None) -> Ontology:
+                   session: Optional[requests.Session] = None,
+                   show_progress : bool = True) -> Ontology:
     """Build an ontology from a list of objects, where each object is connected to its parents according to
     the MultiFun ontology.
 
@@ -293,6 +309,7 @@ def build_ontology(objects: (list[str] | str),
             Defaults to `None`.
         org_id (str, optional): BioCyc organism ID. Defaults to ECOLI.
         session (requests.Session, optional): BioCyc session to use. Defaults to None.
+        show_progress (bool, optional): Whether to show progress bars. Defaults to True.
 
     Returns:
         Ontology: ontology object (access graph with ontology.graph).
@@ -324,7 +341,7 @@ def build_ontology(objects: (list[str] | str),
 
     # Get parents of each object
     common_names, parents_dict = get_ontology_data(
-        set(flat_property), schema_type, org_id=org_id, session=session)
+        set(flat_property), schema_type, org_id=org_id, session=session, show_progress=show_progress)
 
     # Create ontology
     ontology = Ontology()

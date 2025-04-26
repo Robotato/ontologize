@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ontologize"
-version = "0.1.4"
+version = "0.2.0"
 description = "Build annotated ontologies for BioCyc objects"
 readme = "README.md"
 authors = [{ name = "Mica Yang" }]
